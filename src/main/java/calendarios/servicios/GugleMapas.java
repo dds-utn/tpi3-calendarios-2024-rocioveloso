@@ -1,6 +1,6 @@
 package calendarios.servicios;
 
-import calendarios.usuario.Ubicacion;
+import calendarios.Ubicacion;
 
 import java.time.Duration;
 
