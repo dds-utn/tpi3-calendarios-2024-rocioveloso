@@ -19,10 +19,10 @@ Este es el código base para el ejercicio de [Calendarios](https://docs.google.c
  3. Permitir que los eventos registren nombre, fecha y hora de inicio y fin, ubicación, invitades (otros usuaries)
  4. Permitir listar los próximos eventos entre dos fechas (para une usuarie)
  5. Permitir saber cuánto falta para un cierto calendarios.evento (por ejemplo, 15 horas)
- 6. Permitir saber si un calendarios.evento está solapado, y en tal caso, con qué otros eventos
+ 6. Permitir saber si dos eventos están solapado, y en tal caso, con qué otros eventos del calendario
  7. Permitir agendar eventos con repeticiones, con una frecuencia diaria, semanal, mensual o anual
- 8. Permitir saber si le usuarie llega al calendarios.evento más próximo a tiempo, tomando en cuenta la ubicación actual de le usuarie y destino.
- 9. Permitir asignarle a un calendarios.evento varios recordatorios, que se enviarán cuando falte un cierto tiempo
+ 8. Permitir saber si le usuarie llega al evento más próximo a tiempo, tomando en cuenta la ubicación actual de le usuarie y destino.
+ 9. Permitir asignarle a un evento varios recordatorios, que se enviarán cuando falte un cierto tiempo
 
 
 Mientras vas implementando el código que resuelve el problema, codificá casos de prueba que validen la solución. Ya te dejamos algunos para que completes y te sirvan como punto de partida, pero no son suficientes y deberás agregar los tuyos.

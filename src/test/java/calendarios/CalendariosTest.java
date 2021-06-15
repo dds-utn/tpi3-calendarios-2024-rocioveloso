@@ -1,37 +1,55 @@
 package calendarios;
 
-import calendarios.evento.Evento;
-import calendarios.evento.EventoUnico;
+import calendarios.servicios.GugleMapas;
+import calendarios.servicios.PositionService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.Year;
+
 import java.time.temporal.ChronoUnit;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static org.mockito.Mockito.*;
+import static java.time.temporal.ChronoUnit.*;
+import static calendarios.Pending.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-// TODO: se recomienda
-// partir esta clase entre varias para hacerla más fácil de mantener
+/** TODO:
+ *   - Partí opcionalmente esta clase entre varias para hacerla más fácil de mantener.
+ *   - Modificá los tests si es necesario, pero se recomienda fuertemente mantener las interfaces propuestas
+ *   - Agregá más casos de prueba para satisfacer los requerimientos de cobertura
+ */
 class CalendariosTest {
 
-  Ubicacion utnMedrano = new Ubicacion(-34.5984145,-58.4222096);
+  private PositionService positionService;
+  private GugleMapas gugleMapas;
 
+  Ubicacion utnMedrano = new Ubicacion(-34.5984145, -58.4222096);
+  Ubicacion utnCampus = new Ubicacion(-34.6591644,-58.4694862);
+
+  @BeforeEach
+  void initFileSystem() {
+    positionService = mock(PositionService.class);
+    gugleMapas = mock(GugleMapas.class);
+  }
 
   // 1. Permitir que une usuarie tenga muchos calendarios
 
   @Test
   void uneUsuarieTieneMuchosCalendarios() {
-    Usuario usuario = crearUsuario("rene@gugle.com.ar");
+    Usuario rene = crearUsuario("rene@gugle.com.ar");
     Calendario calendario = crearCalendarioVacio();
 
-    usuario.agregarCalendario(calendario);
+    rene.agregarCalendario(calendario);
 
-    assertTrue(usuario.tieneCalendario(calendario));
+    assertTrue(rene.tieneCalendario(calendario));
   }
 
   // 2. Permitir que en cada calendario se agenden múltiples eventos
@@ -43,12 +61,11 @@ class CalendariosTest {
     fail("Pendiente");
   }
 
-
   @Test
   void unCalendarioPermiteAgendarUnEvento() {
     Calendario calendario = new Calendario();
 
-    Evento seguimientoDeTP = crearReunionCortaEnMedrano("Seguimiento de TP", LocalDateTime.of(2021, 10, 1, 15, 30), 30);
+    Evento seguimientoDeTP = crearEventoSimpleEnMedrano("Seguimiento de TP", LocalDateTime.of(2021, 10, 1, 15, 30), Duration.of(30, MINUTES));
     calendario.agendar(seguimientoDeTP);
 
     assertTrue(calendario.estaAgendado(seguimientoDeTP));
@@ -59,8 +76,8 @@ class CalendariosTest {
     Calendario calendario = new Calendario();
     LocalDateTime inicio = LocalDateTime.of(2021, 10, 1, 15, 30);
 
-    Evento seguimientoDeTPA = crearReunionCortaEnMedrano("Seguimiento de TPA", inicio, 30);
-    Evento practicaParcial = crearReunionCortaEnMedrano("Practica para el primer parcial", inicio.plusMinutes(60), 90);
+    Evento seguimientoDeTPA = crearEventoSimpleEnMedrano("Seguimiento de TPA", inicio, Duration.of(30, MINUTES));
+    Evento practicaParcial = crearEventoSimpleEnMedrano("Practica para el primer parcial", inicio.plusMinutes(60), Duration.of(90, MINUTES));
 
     calendario.agendar(seguimientoDeTPA);
     calendario.agendar(practicaParcial);
@@ -78,7 +95,7 @@ class CalendariosTest {
     // Borrar este test si no se utiliza
 
     Calendario calendario = new Calendario();
-    Evento tpRedes = crearReunionCortaEnMedrano("TP de Redes", LocalDateTime.of(2020, 4, 3, 16, 0), 60);
+    Evento tpRedes = crearEventoSimpleEnMedrano("TP de Redes", LocalDateTime.of(2020, 4, 3, 16, 0), Duration.of(2,  HOURS));
 
     calendario.agendar(tpRedes);
 
@@ -91,15 +108,15 @@ class CalendariosTest {
 
   @Test
   void sePuedeListarUnEventoEntreDosFechasParaUneUsuarie() {
-    Usuario usuario = crearUsuario("rene@gugle.com.ar");
+    Usuario rene = crearUsuario("rene@gugle.com.ar");
     Calendario calendario = new Calendario();
-    usuario.agregarCalendario(calendario);
+    rene.agregarCalendario(calendario);
 
-    Evento tpRedes = crearReunionCortaEnMedrano("TP de Redes", LocalDateTime.of(2020, 4, 3, 16, 0), 60);
+    Evento tpRedes = crearEventoSimpleEnMedrano("TP de Redes", LocalDateTime.of(2020, 4, 3, 16, 0), Duration.of(2,  HOURS));
 
     calendario.agendar(tpRedes);
 
-    List<Evento> eventos = usuario.eventosEntreFechas(
+    List<Evento> eventos = rene.eventosEntreFechas(
         LocalDate.of(2020, 4, 1).atStartOfDay(),
         LocalDate.of(2020, 4, 4).atStartOfDay());
 
@@ -108,15 +125,15 @@ class CalendariosTest {
 
   @Test
   void noSeListaUnEventoSiNoEstaEntreLasFechasIndicadasParaUneUsuarie() {
-    Usuario usuario = crearUsuario("rene@gugle.com.ar");
+    Usuario dani = crearUsuario("dani@gugle.com.ar");
     Calendario calendario = new Calendario();
-    usuario.agregarCalendario(calendario);
+    dani.agregarCalendario(calendario);
 
-    Evento tpRedes = crearReunionCortaEnMedrano("TP de Redes", LocalDateTime.of(2020, 4, 3, 16, 0), 60);
+    Evento tpRedes = crearEventoSimpleEnMedrano("TP de Redes", LocalDateTime.of(2020, 4, 3, 16, 0), Duration.of(1, HOURS));
 
     calendario.agendar(tpRedes);
 
-    List<Evento> eventos = usuario.eventosEntreFechas(
+    List<Evento> eventos = dani.eventosEntreFechas(
         LocalDate.of(2020, 5, 8).atStartOfDay(),
         LocalDate.of(2020, 5, 16).atStartOfDay());
 
@@ -130,9 +147,9 @@ class CalendariosTest {
     Calendario calendario = new Calendario();
     usuario.agregarCalendario(calendario);
 
-    Evento tpRedes = crearReunionCortaEnMedrano("TP de Redes", LocalDateTime.of(2020, 4, 3, 16, 0), 60);
-    Evento tpDeGestion = crearReunionCortaEnMedrano("TP de Gestión", LocalDateTime.of(2020, 4, 5, 18, 30), 60);
-    Evento tpDeDds = crearReunionCortaEnMedrano("TP de DDS", LocalDateTime.of(2020, 4, 12, 16, 0), 60);
+    Evento tpRedes = crearEventoSimpleEnMedrano("TP de Redes", LocalDateTime.of(2020, 4, 3, 16, 0), Duration.of(2,  HOURS));
+    Evento tpDeGestion = crearEventoSimpleEnMedrano("TP de Gestión", LocalDateTime.of(2020, 4, 5, 18, 30), Duration.of(2,  HOURS));
+    Evento tpDeDds = crearEventoSimpleEnMedrano("TP de DDS", LocalDateTime.of(2020, 4, 12, 16, 0), Duration.of(2,  HOURS));
 
     calendario.agendar(tpRedes);
     calendario.agendar(tpDeGestion);
@@ -148,19 +165,19 @@ class CalendariosTest {
 
   @Test
   void sePuedenListarMultiplesEventoEntreDosFechasParaUneUsuarieConCoincidenciaTotal() {
-    Usuario usuario = crearUsuario("rene@gugle.com.ar");
+    Usuario juli = crearUsuario("juli@gugle.com.ar");
     Calendario calendario = new Calendario();
-    usuario.agregarCalendario(calendario);
+    juli.agregarCalendario(calendario);
 
-    Evento tpRedes = crearReunionCortaEnMedrano("TP de Redes", LocalDateTime.of(2020, 4, 3, 16, 0), 60);
-    Evento tpDeGestion = crearReunionCortaEnMedrano("TP de Gestión", LocalDateTime.of(2020, 4, 5, 18, 30), 60);
-    Evento tpDeDds = crearReunionCortaEnMedrano("TP de DDS", LocalDateTime.of(2020, 4, 12, 16, 0), 60);
+    Evento tpRedes = crearEventoSimpleEnMedrano("TP de Redes", LocalDateTime.of(2020, 4, 3, 16, 0), Duration.of(2, HOURS));
+    Evento tpDeGestion = crearEventoSimpleEnMedrano("TP de Gestión", LocalDateTime.of(2020, 4, 5, 18, 30), Duration.of(30, MINUTES));
+    Evento tpDeDds = crearEventoSimpleEnMedrano("TP de DDS", LocalDateTime.of(2020, 4, 12, 16, 0), Duration.of(1, HOURS));
 
     calendario.agendar(tpRedes);
     calendario.agendar(tpDeGestion);
     calendario.agendar(tpDeDds);
 
-    List<Evento> eventos = usuario.eventosEntreFechas(
+    List<Evento> eventos = juli.eventosEntreFechas(
         LocalDate.of(2020, 4, 1).atStartOfDay(),
         LocalDateTime.of(2020, 4, 12, 21, 0));
 
@@ -169,16 +186,18 @@ class CalendariosTest {
 
   @Test
   void sePuedenListarEventosDeMultiplesCalendarios() {
-    Usuario usuario = crearUsuario("rene@gugle.com.ar");
+    Usuario juli = crearUsuario("juli@gugle.com.ar");
 
     Calendario calendarioFacultad = new Calendario();
-    usuario.agregarCalendario(calendarioFacultad);
+    juli.agregarCalendario(calendarioFacultad);
 
     Calendario calendarioLaboral = new Calendario();
-    usuario.agregarCalendario(calendarioLaboral);
+    juli.agregarCalendario(calendarioLaboral);
 
     // TODO completar
-    // Agregar eventos a los dos calendarios y asegurarse de que eventosEntreFechas retorne a todos ellos
+    fail("Agregar eventos a los dos calendarios y asegurarse de que eventosEntreFechas retorne a todos ellos");
+
+    // TODO completar
     fail("Pendiente");
   }
 
@@ -188,7 +207,7 @@ class CalendariosTest {
   @Test
   void unEventoSabeCuantoFalta() {
     LocalDateTime inicio = LocalDateTime.now().plusDays(60);
-    Evento parcialDds = crearReunionCortaEnMedrano("Parcial DDS", inicio, 60);
+    Evento parcialDds = crearEventoSimpleEnMedrano("Parcial DDS", inicio, Duration.of(2,  HOURS));
 
     assertTrue(parcialDds.cuantoFalta().compareTo(Duration.of(60, ChronoUnit.DAYS)) <= 0);
     assertTrue(parcialDds.cuantoFalta().compareTo(Duration.of(59, ChronoUnit.DAYS)) >= 0);
@@ -201,8 +220,8 @@ class CalendariosTest {
     Usuario usuario = crearUsuario("rene@gugle.com.ar");
 
     // TODO completar
-    // Agregar uno evento recurrente que se repita los martes a las 19 y dure 45 minutos,
-    // y por tanto deberá aparecer dos veces entre el lunes 14 a las 9 y el lunes 28 a las 21
+    fail("Agregar uno evento recurrente que se repita los martes a las 19 y dure 45 minutos y " +
+        "por tanto deberá aparecer dos veces entre el lunes 14 a las 9 y el lunes 28 a las 21");
 
     List<Evento> eventos = usuario.eventosEntreFechas(
         LocalDateTime.of(2020, 9, 14, 9, 0),
@@ -214,29 +233,119 @@ class CalendariosTest {
   @Test
   void unEventoRecurrenteSabeCuantoFaltaParaSuProximaRepeticion() {
     // TODO completar
-    // crear un evento recurrente que se repita, a partir de hoy, cada 15 días, y arranque una hora antes de la hora actual
+    Evento unRecurrente = fail("crear un evento recurrente que se repita, a partir de hoy, cada 15 días, y arranque una hora antes de la hora actual");
 
-    assertTrue(parcialDds.cuantoFalta().compareTo(Duration.of(15, ChronoUnit.DAYS)) <= 0);
-    assertTrue(parcialDds.cuantoFalta().compareTo(Duration.of(14, ChronoUnit.DAYS)) >= 0);
+    assertTrue(unRecurrente.cuantoFalta().compareTo(Duration.of(15, ChronoUnit.DAYS)) <= 0);
+    assertTrue(unRecurrente.cuantoFalta().compareTo(Duration.of(14, ChronoUnit.DAYS)) >= 0);
   }
 
 
-  // 6. Permitir saber si un calendarios.evento está solapado, y en tal caso, con qué otros eventos
-  // 9. Permitir asignarle a un calendarios.evento varios recordatorios, que se enviarán cuando falte un cierto tiempo
+  // 6. Permitir saber si dos eventos están solapado, y en tal caso, con qué otros eventos del calendario
 
   @Test
-  void llegaATiempo() {
+  void sePuedeSaberSiUnEventoEstaSolapadoCuandoEstaParcialmenteIncluido() {
+    // TODO: esto es opcional pero probablemente ayuda a implementar el requerimiento principal
+    Evento recuperatorioSistemasDeGestion = crearEventoSimpleEnMedrano("Recuperatorio Sistemas de Gestion", LocalDateTime.of(2021, 6, 19, 9, 0), Duration.of(2, HOURS));
+    Evento tpOperativos = crearEventoSimpleEnMedrano("Entrega de Operativos", LocalDateTime.of(2021, 6, 19, 10, 0), Duration.of(2, HOURS));
+
+    assertTrue(recuperatorioSistemasDeGestion.estaSolapadoCon(tpOperativos));
+    assertTrue(tpOperativos.estaSolapadoCon(recuperatorioSistemasDeGestion));
   }
+
+  @Test
+  void sePuedeSaberSiUnEventoEstaSolapadoCuandoEstaTotalmenteIncluido() {
+    // TODO: esto es opcional pero probablemente ayuda a implementar el requerimiento principal
+    Evento recuperatorioSistemasDeGestion = crearEventoSimpleEnMedrano("Recuperatorio Sistemas de Gestion", LocalDateTime.of(2021, 6, 19, 9, 0), Duration.of(4, HOURS));
+    Evento tpOperativos = crearEventoSimpleEnMedrano("Entrega de Operativos", LocalDateTime.of(2021, 6, 19, 10, 0), Duration.of(2, HOURS));
+
+    assertTrue(recuperatorioSistemasDeGestion.estaSolapadoCon(tpOperativos));
+    assertTrue(tpOperativos.estaSolapadoCon(recuperatorioSistemasDeGestion));
+  }
+
+
+  @Test
+  void sePuedeSaberSiUnEventoEstaSolapadoCuandoNoEstaSolapado() {
+    // TODO: esto es opcional pero probablemente ayuda a implementar el requerimiento principal
+    Evento recuperatorioSistemasDeGestion = crearEventoSimpleEnMedrano("Recuperatorio Sistemas de Gestion", LocalDateTime.of(2021, 6, 19, 9, 0), Duration.of(3, HOURS));
+    Evento tpOperativos = crearEventoSimpleEnMedrano("Entrega de Operativos", LocalDateTime.of(2021, 6, 19, 18, 0), Duration.of(2, HOURS));
+
+    assertFalse(recuperatorioSistemasDeGestion.estaSolapadoCon(tpOperativos));
+    assertFalse(tpOperativos.estaSolapadoCon(recuperatorioSistemasDeGestion));
+  }
+
+  @Test
+  void sePuedeSaberConQueEventosEstaSolapado() {
+    Evento recuperatorioSistemasDeGestion = crearEventoSimpleEnMedrano("Recuperatorio Sistemas de Gestion", LocalDateTime.of(2021, 6, 19, 9, 0), Duration.of(2, HOURS));
+    Evento tpOperativos = crearEventoSimpleEnMedrano("Entrega de Operativos", LocalDateTime.of(2021, 6, 19, 10, 0), Duration.of(2, HOURS));
+    Evento tramiteEnElBanco = crearEventoSimpleEnMedrano("Tramite en el banco", LocalDateTime.of(2021, 6, 19, 9, 0), Duration.of(4, HOURS));
+
+    Calendario calendario = crearCalendarioVacio();
+
+    calendario.agendar(recuperatorioSistemasDeGestion);
+    calendario.agendar(tpOperativos);
+
+    assertEquals(Arrays.asList(recuperatorioSistemasDeGestion, tpOperativos), calendario.eventosSolapadosCon(tramiteEnElBanco));
+  }
+
+
+
+  // 9. Permitir asignarle a un evento varios recordatorios, que se enviarán cuando falte un cierto tiempo
+
 
   @Test
   void proximoEvento() {
+    // TODO completar
+    fail("Pendiente");
   }
 
-  // 8. Permitir saber si le usuarie llega al calendarios.evento más próximo a tiempo, tomando en cuenta la ubicación actual de le usuarie y destino.
+  // 8. Permitir saber si le usuarie llega al evento más próximo a tiempo, tomando en cuenta la ubicación actual de le usuarie y destino.
 
 
   @Test
-  void llegaATiempoAlProximoEvento() {
+  void llegaATiempoAlProximoEventoCuandoNoHayEventos() {
+    Usuario feli = crearUsuario("feli@gugle.com.ar");
+    assertTrue(feli.llegaATiempoAlProximoEvento());
+  }
+
+  @Test
+  void llegaATiempoAlProximoEventoCuandoHayUnEventoCercano() {
+    Usuario feli = crearUsuario("feli@gugle.com.ar");
+    Calendario calendario = crearCalendarioVacio();
+    feli.agregarCalendario(calendario);
+
+    fail("mockear al Position Service para que diga que ya está en medrano y a GugleMaps para que diga que tarda 0 minutos en llegar");
+
+    calendario.agendar(crearEventoSimpleEnMedrano("Parcial", LocalDateTime.now().plusMinutes(30), Duration.of(2, HOURS)));
+
+    assertTrue(feli.llegaATiempoAlProximoEvento());
+  }
+
+  @Test
+  void noLlegaATiempoAlProximoEventoCuandoHayUnEventoFísicamenteLejano() {
+    Usuario feli = crearUsuario("feli@gugle.com.ar");
+    Calendario calendario = crearCalendarioVacio();
+    feli.agregarCalendario(calendario);
+
+    fail("mockear al Position Service para que diga que está en Medrano y a GugleMaps para que diga que tarda 0 minutos en llegar");
+
+    calendario.agendar(crearEventoSimpleEnMedrano("Parcial", LocalDateTime.now().plusMinutes(30), Duration.of(2, HOURS)));
+
+    assertFalse(feli.llegaATiempoAlProximoEvento());
+  }
+
+
+  @Test
+  void llegaATiempoAlProximoEventoCuandoHayUnEventoCercanoAunqueAlSiguienteNoLlegue() {
+    Usuario feli = crearUsuario("feli@gugle.com.ar");
+    Calendario calendario = crearCalendarioVacio();
+    feli.agregarCalendario(calendario);
+
+    fail("mockear al Position Service para que diga que está en Medrano y a GugleMaps para que diga que tarda 0 minutos en llegar a Medrano y 1:30 horas en llegar a Campus");
+
+    calendario.agendar(crearEventoSimpleEnMedrano("Parcial", LocalDateTime.now().plusMinutes(30), Duration.of(3, HOURS)));
+    calendario.agendar(crearEventoSimpleEnCampus("Final", LocalDateTime.now().plusMinutes(45), Duration.of(1, HOURS)));
+
+    assertTrue(feli.llegaATiempoAlProximoEvento());
   }
 
   /**
@@ -244,7 +353,7 @@ class CalendariosTest {
    */
   Usuario crearUsuario(String email) {
     // TODO completar
-    return new Usuario(email);
+    return pending("Crear usuarie");
   }
   /*
    * @return Un calendario sin ningún evento agendado aún
@@ -252,19 +361,23 @@ class CalendariosTest {
 
   Calendario crearCalendarioVacio() {
     // TODO completar
-    return new Calendario();
+    return pending("Crear calendario");
+  }
+
+  Evento crearEventoSimpleEnMedrano(String nombre, LocalDateTime inicio, Duration duracion) {
+    return crearEventoSimple("Seguimiento de TPA", inicio, inicio.plus(duracion), utnMedrano, Collections.emptyList());
+  }
+
+  Evento crearEventoSimpleEnCampus(String nombre, LocalDateTime inicio, Duration duracion) {
+    return crearEventoSimple("Seguimiento de TPA", inicio, inicio.plus(duracion), utnCampus, Collections.emptyList());
   }
 
   /**
    * @return un evento sin invtades que no se repite, que tenga el nombre, fecha de inicio y fin, ubicación dados
    */
-  Evento crearEventoSolitarioSimple(String nombre, LocalDateTime inicio, LocalDateTime fin, Ubicacion ubicacion) {
+  Evento crearEventoSimple(String nombre, LocalDateTime inicio, LocalDateTime fin, Ubicacion ubicacion, List<Usuario> invitados) {
     // TODO completar
-    return new EventoUnico(nombre, inicio, fin, ubicacion, Collections.emptyList());
+    return pending("Crear evento simple");
   }
 
-
-  Evento crearReunionCortaEnMedrano(String nombre, LocalDateTime inicio, int duracionEnMinutos) {
-    return crearEventoSolitarioSimple("Seguimiento de TPA", inicio, inicio.plusMinutes(duracionEnMinutos), utnMedrano);
-  }
 }
