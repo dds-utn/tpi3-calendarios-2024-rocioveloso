@@ -27,6 +27,17 @@ Este es el código base para el ejercicio de [Calendarios](https://docs.google.c
 
 Mientras vas implementando el código que resuelve el problema, codificá casos de prueba que validen la solución. Ya te dejamos algunos para que completes y te sirvan como punto de partida, pero no son suficientes y deberás agregar los tuyos.
 
+# Recomendaciones
+
+1. No modificar las interfaces en el paquetes `calendarios.servicios` ni implementarlas. Representan servicios externos.
+2. Para hacer las pruebas probablemente convenga mockearlas. Mockito está incluido en el proyecto. Recordar que cuentan con esta [guía rápida](https://docs.google.com/document/d/1467Gc-adARJZZhVAdgazdCeHWRzCUJg6CfMD3nkhmG4/edit#)
+3. Las clases `Usuario`, `Evento` y `Calendario` se proveen como punto de partida, pero pueden ser modificadas según consideres necesario. Se recomienda de todas formas apegarse a la interfaz mínima propuesta.
+4. La clase `Ubicacion` se provee como implementación trivial de un par latitud-longitud. No es necesario modificarla, pero tampoco está prohibido.
+5. La clase `Pending` está sólo para que el código que trae el proyecto por defecto compile. Podés borrarla una vez que termines.
+6. Probablemente te convenga partir `CalendariosTest` en varias otras clases para que sea más sencillo escribir las pruebas.
+7. Hay tests que están implementados completamente (pero no andan), otros que están implementados parcialmente y otros que tenés que implementar vos desde cero. En todos los casos podés modificarlos según consideres necesario pero no elimines los casos de prueba planteados, que están agrupados según los requerimientos del dominio.
+8. Intentá sacar el máximo provecho de la biblitoca de fechas de Java (`LocalDate`, `LocalDateTime`, `Duration`, `ChronoUnit`, `Period`, etc)
+9. Intentá sacar el máximo provecho de la biblioteca de colecciones y Streams de Java
 
 # Ejecutar tests
 

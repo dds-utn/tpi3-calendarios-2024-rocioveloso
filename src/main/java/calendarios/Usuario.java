@@ -13,21 +13,25 @@ import static calendarios.Pending.*;
 
 public class Usuario {
 
-  // TODO agregar estado y comportamiento necesario
+  // TODO implementar estado, comportamiento y/o polimorfismo según sea neceario
 
   public void agregarCalendario(Calendario calendario) {
+    // TODO implementar
     pending();
   }
 
   public List<Evento> eventosEntreFechas(LocalDateTime inicio, LocalDateTime fin) {
+    // TODO implementar
     return pending();
   }
 
   public boolean llegaATiempoAlProximoEvento()  {
+    // TODO implementar
     return pending();
   }
 
   public boolean tieneCalendario(Calendario calendario) {
+    // TODO implementar
     return pending();
   }
 }
