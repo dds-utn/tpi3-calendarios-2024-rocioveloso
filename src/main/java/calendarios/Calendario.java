@@ -1,31 +1,44 @@
 package calendarios;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
-import static calendarios.Pending.pending;
-
 public class Calendario {
+  public List<Evento> eventos = new ArrayList<Evento>();
 
-  // TODO implementar estado, comportamiento y/o polimorfismo según sea neceario
 
   public void agendar(Evento evento) {
-    // TODO implementar
-    pending();
+
+    eventos.add(evento);
+
   }
 
   public boolean estaAgendado(Evento evento) {
-    // TODO implementar
-    return pending();
+
+    return eventos.contains(evento);
   }
 
   public List<Evento> eventosEntreFechas(LocalDateTime initio, LocalDateTime fin) {
-    // TODO implementar
-    return pending();
+
+    List<Evento> eventosSolicitados = new ArrayList<Evento>();
+
+    eventos.forEach(e -> eventosSolicitados.addAll(e.repeticionesEntreFechas(initio, fin)));
+    return eventosSolicitados;
+
   }
 
   public List<Evento> eventosSolapadosCon(Evento evento) {
-    // TODO implementar
-    return pending();
+
+    return eventos.stream().filter(event -> event.estaSolapadoCon(evento)).toList();
+
   }
+
+  public Evento proximoEvento() {
+
+    return eventos.stream().min(Comparator.comparing(Evento::cuantoFalta)).orElse(null);
+
+  }
+
 }

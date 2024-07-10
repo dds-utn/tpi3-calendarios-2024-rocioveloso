@@ -2,6 +2,8 @@ package calendarios;
 
 import calendarios.servicios.GugleMapas;
 import calendarios.servicios.PositionService;
+import calendarios.servicios.ShemailLib;
+import java.util.ArrayList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,6 +32,8 @@ class CalendariosTest {
 
   private PositionService positionService;
   private GugleMapas gugleMapas;
+  private ShemailLib shemailLib;
+  private Servicios servicios;
 
   Ubicacion utnMedrano = new Ubicacion(-34.5984145, -58.4222096);
   Ubicacion utnCampus = new Ubicacion(-34.6591644,-58.4694862);
@@ -38,6 +42,8 @@ class CalendariosTest {
   void initFileSystem() {
     positionService = mock(PositionService.class);
     gugleMapas = mock(GugleMapas.class);
+    shemailLib = mock(ShemailLib.class);
+    servicios = new Servicios(positionService, gugleMapas, shemailLib);
   }
 
   // 1. Permitir que une usuarie tenga muchos calendarios
@@ -57,8 +63,22 @@ class CalendariosTest {
 
   @Test
   void unEventoPuedeTenerMultiplesInvitades() {
-    // TODO completar
-    fail("Pendiente");
+
+    List<Usuario> invitados = new ArrayList<>();
+
+    Usuario Tony = crearUsuario("tony@gugle.com.ar");
+    Usuario Pato = crearUsuario("pato@gugle.com.ar");
+    Usuario Feli = crearUsuario("feli@gugle.com.ar");
+
+    invitados.add(Tony);
+    invitados.add(Pato);
+    invitados.add(Feli);
+
+    Evento grupoTP = crearEventoSimple("Juntada TP", LocalDateTime.of(2021, 10, 1, 15, 30), LocalDateTime.of(2021, 10, 1, 17, 00),utnMedrano, invitados);
+
+    assertTrue(grupoTP.getInvitados().size() > 1);
+
+    //fail("Pendiente");
   }
 
   @Test
@@ -194,11 +214,18 @@ class CalendariosTest {
     Calendario calendarioLaboral = new Calendario();
     juli.agregarCalendario(calendarioLaboral);
 
-    // TODO completar
-    fail("Agregar eventos a los dos calendarios y asegurarse de que eventosEntreFechas retorne a todos ellos");
 
-    // TODO completar
-    fail("Pendiente");
+    //fail("Agregar eventos a los dos calendarios y asegurarse de que eventosEntreFechas retorne a todos ellos");
+    Evento tpRedes = crearEventoSimpleEnMedrano("TP de Redes", LocalDateTime.of(2020, 4, 3, 16, 0), Duration.of(2, HOURS));
+    Evento reuStatus = crearEventoSimpleEnMedrano("Reunion de Status", LocalDateTime.of(2020, 4, 5, 18, 30), Duration.of(30, MINUTES));
+    Evento tpDeDds = crearEventoSimpleEnMedrano("TP de DDS", LocalDateTime.of(2020, 4, 12, 16, 0), Duration.of(1, HOURS));
+
+    calendarioFacultad.agendar(tpRedes);
+    calendarioLaboral.agendar(reuStatus);
+    calendarioFacultad.agendar(tpDeDds);
+
+
+    assertEquals(Arrays.asList(tpRedes, tpDeDds, reuStatus), juli.eventosEntreFechas(LocalDateTime.of(2020, 4, 2, 15, 0), LocalDateTime.of(2020, 4, 15, 15, 0) ));
   }
 
 
@@ -220,8 +247,15 @@ class CalendariosTest {
     Usuario usuario = crearUsuario("rene@gugle.com.ar");
 
     // TODO completar
-    fail("Agregar uno evento recurrente que se repita los martes a las 19 y dure 45 minutos y " +
-        "por tanto deberá aparecer dos veces entre el lunes 14 a las 9 y el lunes 28 a las 21");
+   /* fail("Agregar uno evento recurrente que se repita los martes a las 19 y dure 45 minutos y " +
+        "por tanto deberá aparecer dos veces entre el lunes 14 a las 9 y el lunes 28 a las 21"); */
+
+    Evento claseConsulta = crearEventoRecurrente("Clase de Consulta", LocalDateTime.of(2020, 9, 15, 19, 0), Duration.of(45, MINUTES), utnCampus, TipoRepeticion.SEMANAL, 1);
+
+    Calendario calendario = new Calendario();
+    usuario.agregarCalendario(calendario);
+
+    calendario.agendar(claseConsulta);
 
     List<Evento> eventos = usuario.eventosEntreFechas(
         LocalDateTime.of(2020, 9, 14, 9, 0),
@@ -233,8 +267,9 @@ class CalendariosTest {
   @Test
   void unEventoRecurrenteSabeCuantoFaltaParaSuProximaRepeticion() {
     // TODO completar
-    Evento unRecurrente = fail("crear un evento recurrente que se repita, a partir de hoy, cada 15 días, y arranque una hora antes de la hora actual");
-
+    Evento unRecurrente = crearEventoRecurrente("Clase de Consulta", LocalDateTime.now().minusHours(1), Duration.of(2, HOURS), utnCampus, TipoRepeticion.DIARIA, 15);
+        /*fail("crear un evento recurrente que se repita, a partir de hoy, cada 15 días, y arranque una hora antes de la hora actual");
+*/
     assertTrue(unRecurrente.cuantoFalta().compareTo(Duration.of(15, ChronoUnit.DAYS)) <= 0);
     assertTrue(unRecurrente.cuantoFalta().compareTo(Duration.of(14, ChronoUnit.DAYS)) >= 0);
   }
@@ -294,9 +329,34 @@ class CalendariosTest {
 
   @Test
   void proximoEvento() {
-    // TODO completar
-    fail("Pendiente");
+    Calendario calendario = new Calendario();
+
+    Evento tpRedes = crearEventoSimpleEnMedrano("TP de Redes", LocalDateTime.of(2020, 4, 3, 16, 0), Duration.of(2, HOURS));
+    Evento tpDDS = crearEventoSimpleEnMedrano("TP de Diseño", LocalDateTime.of(2020, 4, 25, 18, 30), Duration.of(30, MINUTES));
+
+
+    calendario.agendar(tpRedes);
+    calendario.agendar(tpDDS);
+
+    assertEquals(tpRedes, calendario.proximoEvento());
   }
+
+  @Test
+  void proximoEventoConRecordatorio() {
+
+    Evento tpDDS = new Evento("TP de Diseño", LocalDateTime.now().plusDays(2), LocalDateTime.now().plusDays(3), utnCampus, TipoRepeticion.UNICA, 1, new ArrayList<Usuario>(), new ArrayList<Recordatorios>() ) ;
+
+    Recordatorios priRecordar = new Recordatorios(Duration.ofMinutes(10));
+    Recordatorios segRecordar = new Recordatorios(Duration.ofDays(1));
+
+    tpDDS.agregarRecordatorio(priRecordar);
+    tpDDS.agregarRecordatorio(segRecordar);
+
+
+    assertEquals(List.of(priRecordar, segRecordar), tpDDS.getRecordatorios());
+  }
+
+
 
   // 8. Permitir saber si le usuarie llega al evento más próximo a tiempo, tomando en cuenta la ubicación actual de le usuarie y destino.
 
@@ -304,7 +364,7 @@ class CalendariosTest {
   @Test
   void llegaATiempoAlProximoEventoCuandoNoHayEventos() {
     Usuario feli = crearUsuario("feli@gugle.com.ar");
-    assertTrue(feli.llegaATiempoAlProximoEvento());
+    assertTrue(feli.llegaAtiempoAlProximoEvento());
   }
 
   @Test
@@ -313,11 +373,14 @@ class CalendariosTest {
     Calendario calendario = crearCalendarioVacio();
     feli.agregarCalendario(calendario);
 
-    fail("mockear al Position Service para que diga que ya está en medrano y a GugleMaps para que diga que tarda 0 minutos en llegar");
+    /*fail("mockear al Position Service para que diga que ya está en medrano y a GugleMaps para que diga que tarda 0 minutos en llegar");*/
+
+    when(positionService.ubicacionActual("feli@gugle.com.ar")).thenReturn(utnMedrano);
+    when(gugleMapas.tiempoEstimadoHasta(utnMedrano, utnMedrano)).thenReturn(Duration.ofMinutes(0));
 
     calendario.agendar(crearEventoSimpleEnMedrano("Parcial", LocalDateTime.now().plusMinutes(30), Duration.of(2, HOURS)));
 
-    assertTrue(feli.llegaATiempoAlProximoEvento());
+    assertTrue(feli.llegaAtiempoAlProximoEvento());
   }
 
   @Test
@@ -326,11 +389,15 @@ class CalendariosTest {
     Calendario calendario = crearCalendarioVacio();
     feli.agregarCalendario(calendario);
 
-    fail("mockear al Position Service para que diga que está en Medrano y a GugleMaps para que diga que tarda 0 minutos en llegar");
+   /* fail("mockear al Position Service para que diga que está en Medrano y a GugleMaps para que diga que tarda 0 minutos en llegar");*/
+
+    when(positionService.ubicacionActual("feli@gugle.com.ar")).thenReturn(utnMedrano);
+    when(gugleMapas.tiempoEstimadoHasta(utnMedrano, utnMedrano)).thenReturn(Duration.ofMinutes(50));
+
 
     calendario.agendar(crearEventoSimpleEnMedrano("Parcial", LocalDateTime.now().plusMinutes(30), Duration.of(2, HOURS)));
 
-    assertFalse(feli.llegaATiempoAlProximoEvento());
+    assertFalse(feli.llegaAtiempoAlProximoEvento());
   }
 
 
@@ -340,28 +407,52 @@ class CalendariosTest {
     Calendario calendario = crearCalendarioVacio();
     feli.agregarCalendario(calendario);
 
-    fail("mockear al Position Service para que diga que está en Medrano y a GugleMaps para que diga que tarda 0 minutos en llegar a Medrano y 1:30 horas en llegar a Campus");
+    /* fail("mockear al Position Service para que diga que está en Medrano y a GugleMaps para que diga que tarda 0 minutos en llegar a Medrano y 1:30 horas en llegar a Campus"); */
+
+    when(positionService.ubicacionActual("feli@gugle.com.ar")).thenReturn(utnMedrano);
+    when(gugleMapas.tiempoEstimadoHasta(utnMedrano, utnMedrano)).thenReturn(Duration.ofMinutes(0));
+    when(gugleMapas.tiempoEstimadoHasta(utnMedrano, utnCampus)).thenReturn(Duration.ofMinutes(90));
+
 
     calendario.agendar(crearEventoSimpleEnMedrano("Parcial", LocalDateTime.now().plusMinutes(30), Duration.of(3, HOURS)));
     calendario.agendar(crearEventoSimpleEnCampus("Final", LocalDateTime.now().plusMinutes(45), Duration.of(1, HOURS)));
 
-    assertTrue(feli.llegaATiempoAlProximoEvento());
+    assertTrue(feli.llegaAtiempoAlProximoEvento());
+  }
+
+  @Test
+  void sePuedeEnviarRecordatorio(){
+    Envios envio = new Envios(servicios);
+    Usuario feli = crearUsuario("feli@gugle.com.ar");
+    envio.agregarUsuario(feli);
+    Calendario calendario = crearCalendarioVacio();
+    feli.agregarCalendario(calendario);
+
+    Evento tpRedes = crearEventoSimpleEnMedrano("Seguimiento de TPA", LocalDateTime.now().plusMinutes(10), Duration.of(2, HOURS));
+    calendario.agendar(tpRedes);
+
+    Recordatorios priRecordar = new Recordatorios(Duration.ofMinutes(10));
+    tpRedes.agregarRecordatorio(priRecordar);
+
+    envio.enviarReacordatorios();
+
+    verify(shemailLib).enviarMailA("feli@gugle.com.ar", "Seguimiento de TPA", "Evento " + "Seguimiento de TPA" + " serà dentro de " + "10" + " minutos");
   }
 
   /**
    * @return une usuarie con el mail dado
    */
   Usuario crearUsuario(String email) {
-    // TODO completar
-    return pending("Crear usuarie");
+    Usuario nuevoUsuario = new Usuario(email, servicios);
+    return nuevoUsuario;
   }
   /*
    * @return Un calendario sin ningún evento agendado aún
    */
 
   Calendario crearCalendarioVacio() {
-    // TODO completar
-    return pending("Crear calendario");
+    Calendario nuevoCalendario = new Calendario();
+    return nuevoCalendario;
   }
 
   Evento crearEventoSimpleEnMedrano(String nombre, LocalDateTime inicio, Duration duracion) {
@@ -376,8 +467,12 @@ class CalendariosTest {
    * @return un evento sin invtades que no se repite, que tenga el nombre, fecha de inicio y fin, ubicación dados
    */
   Evento crearEventoSimple(String nombre, LocalDateTime inicio, LocalDateTime fin, Ubicacion ubicacion, List<Usuario> invitados) {
-    // TODO completar
-    return pending("Crear evento simple");
+    Evento nuevoEvento = new Evento(nombre, inicio, fin, ubicacion, TipoRepeticion.UNICA, 1, invitados, new ArrayList<Recordatorios>());
+    return nuevoEvento;
   }
 
+  Evento crearEventoRecurrente(String nombre, LocalDateTime inicio, Duration duracion, Ubicacion ubicacion, TipoRepeticion tipoRepeticion, Integer cadaCuanto) {
+    Evento nuevoEventoRecurrente = new Evento(nombre, inicio, inicio.plus(duracion), ubicacion, tipoRepeticion, cadaCuanto, Collections.emptyList(), new ArrayList<Recordatorios>());
+    return nuevoEventoRecurrente;
+  }
 }
